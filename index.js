@@ -3,7 +3,7 @@ const os = require("os");
 const app = express();
 
 const PORT = process.env.PORT || 3000;
-const MESSAGE = process.env.MESSAGE || "Running locally";
+const MESSAGE = process.env.MESSAGE || "Hallo";
 const startTime = Date.now();
 
 // Serve static HTML with modern dashboard
@@ -170,7 +170,9 @@ app.get("/", (req, res) => {
                     <div class="uptime" id="uptime">Lädt...</div>
                     <div class="info-row">
                         <span class="label">Gestartet:</span>
-                        <span class="value">${new Date(startTime).toLocaleString('de-DE')}</span>
+                        <span class="value">${new Date(
+                          startTime
+                        ).toLocaleString("de-DE")}</span>
                     </div>
                 </div>
             </div>
@@ -184,11 +186,15 @@ app.get("/", (req, res) => {
                     </div>
                     <div class="info-row">
                         <span class="label">Gesamt RAM:</span>
-                        <span class="value">${Math.round(os.totalmem() / 1024 / 1024 / 1024)} GB</span>
+                        <span class="value">${Math.round(
+                          os.totalmem() / 1024 / 1024 / 1024
+                        )} GB</span>
                     </div>
                     <div class="info-row">
                         <span class="label">Freier RAM:</span>
-                        <span class="value">${Math.round(os.freemem() / 1024 / 1024 / 1024)} GB</span>
+                        <span class="value">${Math.round(
+                          os.freemem() / 1024 / 1024 / 1024
+                        )} GB</span>
                     </div>
                     <div class="info-row">
                         <span class="label">Architektur:</span>
@@ -248,8 +254,10 @@ app.get("/", (req, res) => {
 app.get("/api/time", (req, res) => {
   res.json({
     timestamp: new Date().toISOString(),
-    localTime: new Date().toLocaleString('de-DE', { timeZone: 'Europe/Zurich' }),
-    timezone: 'Europe/Zurich',
+    localTime: new Date().toLocaleString("de-DE", {
+      timeZone: "Europe/Zurich",
+    }),
+    timezone: "Europe/Zurich",
     environment: MESSAGE,
   });
 });
@@ -281,7 +289,7 @@ app.get("/api/uptime", (req, res) => {
   const hours = Math.floor(uptimeSeconds / 3600);
   const minutes = Math.floor((uptimeSeconds % 3600) / 60);
   const seconds = uptimeSeconds % 60;
-  
+
   res.json({
     uptime: `${hours}h ${minutes}m ${seconds}s`,
     uptimeSeconds: uptimeSeconds,
