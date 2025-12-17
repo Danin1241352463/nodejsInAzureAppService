@@ -2,6 +2,200 @@ const express = require("express");
 const os = require("os");
 const app = express();
 
+// ===== Environment Variables =====
+const PORT = process.env.PORT || 3000;
+const MESSAGE = process.env.MESSAGE || "Hallo (lokal)";
+const ENV = process.env.NODE_ENV || "development";
+const REGION = process.env.REGION || "local";
+
+const startTime = Date.now();
+
+// ===== Frontend =====
+app.get("/", (req, res) => {
+  res.send(`
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Node.js auf Azure App Service - Demo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { text-align: center; color: white; margin-bottom: 30px; }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .status-badge {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .info-row:last-child { border-bottom: none; }
+        .label { font-weight: 600; }
+        .value { color: #667eea; }
+        .uptime { font-size: 2em; text-align: center; color: #667eea; }
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 10px;
+            width: 100%;
+        }
+        #response-output {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🚀 Node.js auf Azure App Service</h1>
+        <p>Live Demo – Environment Variables</p>
+        <span class="status-badge">✓ Online</span>
+    </div>
+
+    <div class="grid">
+        <div class="card">
+            <h2>🌍 Environment</h2>
+            <div class="info-row"><span class="label">MESSAGE</span><span class="value">${MESSAGE}</span></div>
+            <div class="info-row"><span class="label">NODE_ENV</span><span class="value">${ENV}</span></div>
+            <div class="info-row"><span class="label">REGION</span><span class="value">${REGION}</span></div>
+            <div class="info-row"><span class="label">Node Version</span><span class="value">${
+              process.version
+            }</span></div>
+            <div class="info-row"><span class="label">Hostname</span><span class="value">${os.hostname()}</span></div>
+        </div>
+
+        <div class="card">
+            <h2>⏱️ Uptime</h2>
+            <div class="uptime" id="uptime">Lädt...</div>
+            <div class="info-row">
+                <span class="label">Gestartet</span>
+                <span class="value">${new Date(startTime).toLocaleString(
+                  "de-DE"
+                )}</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🔌 API</h2>
+            <button class="btn" onclick="callApi('/api/time')">Server Zeit</button>
+            <button class="btn" onclick="callApi('/api/info')">System Info</button>
+            <button class="btn" onclick="callApi('/api/config')">Config anzeigen</button>
+            <div id="response-output"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateUptime() {
+    fetch('/api/uptime')
+        .then(res => res.json())
+        .then(data => document.getElementById('uptime').textContent = data.uptime);
+}
+setInterval(updateUptime, 1000);
+updateUptime();
+
+function callApi(endpoint) {
+    const output = document.getElementById('response-output');
+    output.style.display = 'block';
+    output.textContent = 'Lädt...';
+    fetch(endpoint)
+        .then(res => res.json())
+        .then(data => output.textContent = JSON.stringify(data, null, 2));
+}
+</script>
+</body>
+</html>
+`);
+});
+
+// ===== API Endpoints =====
+app.get("/api/time", (req, res) => {
+  res.json({
+    timestamp: new Date().toISOString(),
+    environment: MESSAGE,
+    region: REGION,
+  });
+});
+
+app.get("/api/info", (req, res) => {
+  res.json({
+    platform: "Azure App Service",
+    nodeVersion: process.version,
+    hostname: os.hostname(),
+    cpus: os.cpus().length,
+    memory: `${Math.round(os.totalmem() / 1024 / 1024 / 1024)} GB`,
+    uptime: `${Math.floor(process.uptime())}s`,
+  });
+});
+
+// ⭐ WICHTIG FÜR ENV-DEMO
+app.get("/api/config", (req, res) => {
+  res.json({
+    MESSAGE,
+    NODE_ENV: ENV,
+    REGION,
+  });
+});
+
+app.get("/api/uptime", (req, res) => {
+  const s = Math.floor(process.uptime());
+  res.json({
+    uptime: `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m ${
+      s % 60
+    }s`,
+  });
+});
+
+app.listen(PORT, () => {
+  console.log(`✓ Server running on port ${PORT}`);
+  console.log(`✓ MESSAGE=${MESSAGE}`);
+  console.log(`✓ NODE_ENV=${ENV}`);
+  console.log(`✓ REGION=${REGION}`);
+});
+
+/*const express = require("express");
+const os = require("os");
+const app = express();
+
 const PORT = process.env.PORT || 3000;
 const MESSAGE = process.env.MESSAGE || "Hallo";
 const startTime = Date.now();
@@ -300,3 +494,4 @@ app.listen(PORT, () => {
   console.log(`✓ Server running on port ${PORT}`);
   console.log(`✓ Environment: ${MESSAGE}`);
 });
+*/
